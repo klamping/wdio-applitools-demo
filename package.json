@@ -9,7 +9,7 @@
   "license": "ISC",
   "dependencies": {},
   "devDependencies": {
-    "@applitools/eyes.webdriverio": "1.1.0",
+    "@applitools/eyes.webdriverio": "^1.2.0",
     "wdio-dot-reporter": "0.0.10",
     "wdio-mocha-framework": "^0.6.2",
     "wdio-selenium-standalone-service": "0.0.10",
