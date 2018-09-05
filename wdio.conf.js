@@ -1,3 +1,7 @@
+const {Eyes, Target} = require('@applitools/eyes.webdriverio');
+const {ConsoleLogHandler, BatchInfo} = require('@applitools/eyes.sdk.core');
+
+
 exports.config = {
 
     //
@@ -39,12 +43,10 @@ exports.config = {
     // https://docs.saucelabs.com/reference/platforms-configurator
     //
     capabilities: [{
-        // maxInstances can get overwritten per capability. So if you have an in-house Selenium
-        // grid with only 5 firefox instances available you can make sure that not more than
-        // 5 instances get started at a time.
-        maxInstances: 5,
-        //
         browserName: 'chrome'
+    }, {
+        browserName: 'firefox',
+        "acceptInsecureCerts": true,
     }],
     //
     // ===================
@@ -177,14 +179,50 @@ exports.config = {
      * Hook that gets executed before the suite starts
      * @param {Object} suite suite details
      */
-    // beforeSuite: function (suite) {
-    // },
+    beforeSuite: function (suite) {
+    },
     /**
      * Function to be executed before a test (in Mocha/Jasmine) or a step (in Cucumber) starts.
      * @param {Object} test test details
      */
-    // beforeTest: function (test) {
-    // },
+    beforeTest: function (test) {
+        // { type: 'beforeTest',
+        //   title: 'should look visually perfect',
+        //   parent: 'my first visual test',
+        //   fullTitle: 'my first visual test should look visually perfect',
+        //   pending: false,
+        //   file: '/Users/klamping/Sites/wdio-applitools-demo/test/specs/visual.js',
+        //   currentTest: 'should look visually perfect',
+        //   passed: false,
+        //   duration: undefined }
+
+        browser.addCommand('checkWindow', async function (name) {
+
+          // if eyes session isn't open, initialize it
+          if (!browser._eyes) {
+            browser._eyes = new Eyes();
+            browser._eyes.setApiKey(process.env.APPLITOOLS_KEY);
+
+            // TODO unique name via settings
+            let batchInfo = new BatchInfo('Test Suite Name');
+
+            // TODO unique ID per run
+            batchInfo.setId(2);
+            browser._eyes.setBatch(batchInfo);
+            // browser._eyes.setLogHandler(new ConsoleLogHandler(true));
+          }
+
+          console.log('wdio.conf.js :199', browser._eyes);
+          if (!browser._eyes._isOpen) {
+            const viewportSize = browser.getViewportSize();
+
+            // appname, test name
+            await browser._eyes.open(browser, 'App Name', test.fullTitle, viewportSize);
+          }
+
+          await browser._eyes.check(name, Target.window())
+        }, true)
+    },
     /**
      * Hook that gets executed _before_ a hook within the suite starts (e.g. runs before calling
      * beforeEach in Mocha)
@@ -201,13 +239,31 @@ exports.config = {
      * Function to be executed after a test (in Mocha/Jasmine) or a step (in Cucumber) ends.
      * @param {Object} test test details
      */
-    // afterTest: function (test) {
-    // },
+    afterTest: async function (test) {
+        // TODO fail test
+        // { type: 'afterTest',
+        //   title: 'should look visually perfect',
+        //   parent: 'my first visual test',
+        //   fullTitle: 'my first visual test should look visually perfect',
+        //   pending: false,
+        //   file: '/Users/klamping/Sites/wdio-applitools-demo/test/specs/visual.js',
+        //   currentTest: 'should look visually perfect',
+        //   passed: true,
+        //   duration: 13153 }
+        // if eyes session is opened, the go ahead and close it
+        if (browser._eyes && browser._eyes._isOpen) {
+          try {
+            await browser._eyes.close();
+          } finally {
+            await browser._eyes.abortIfNotClosed();
+          }
+        }
+    },
     /**
      * Hook that gets executed after the suite has ended
      * @param {Object} suite suite details
      */
-    // afterSuite: function (suite) {
+    // afterSuite: async function (suite) {
     // },
 
     /**
@@ -226,7 +282,7 @@ exports.config = {
      * @param {Array.<Object>} capabilities list of capabilities details
      * @param {Array.<String>} specs List of spec file paths that ran
      */
-    // after: function (result, capabilities, specs) {
+    // after: async function (result, capabilities, specs) {
     // },
     /**
      * Gets executed right after terminating the webdriver session.

@@ -1,4 +1,4 @@
-describe('my first visual test', function () {
+describe('my second visual test', function () {
   it('should look visually perfect', async function () {
     browser.url('./helloworld');
 
